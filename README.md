@@ -13,6 +13,7 @@ for UANDES.
 - Active Storage (pet photos, with image variants via libvips)
 - Action Text / Trix (treatment clinical notes)
 - Devise (authentication, with role enum)
+- Pundit (role-based authorization with per-resource policies)
 
 ## System dependencies
 
@@ -82,30 +83,67 @@ bin/rails db:migrate db:seed
 bin/rails test
 ```
 
-## Authentication
+## Authentication & authorization
 
-Every page except the public landing (the root route, `owners#index`) is
-behind a Devise login. Hitting `/pets`, `/vets`, `/appointments`,
-`/owners/:id` (etc.) while signed out redirects to `/users/sign_in`.
+Every page except the public landing (`pages#home`) is behind a Devise
+login — hitting `/pets`, `/vets`, `/appointments`, `/owners/:id` while
+signed out redirects to `/users/sign_in`. **Self-registration is disabled**:
+the `/users/sign_up` route does not exist. New accounts are created via
+seeds or the admin console.
+
+Once a user is signed in, every controller action runs through a Pundit
+policy. The `index` action calls `policy_scope(Model)`, so a non-admin
+sees only the rows they're entitled to; every other action calls
+`authorize @record`. Action buttons (`Edit`, `Delete`, `New …`) are wrapped
+in `policy(record).action?` checks so the UI only offers what the user is
+allowed to do.
+
+### Role matrix (short version)
+
+| Resource    | Admin     | Vet                                          | Owner                                                    |
+| ----------- | --------- | -------------------------------------------- | -------------------------------------------------------- |
+| Owner       | full CRUD | index + show all                             | show / edit only their own record; no `/owners` listing  |
+| Pet         | full CRUD | index + show all                             | full CRUD scoped to their own pets (owner_id is forced)  |
+| Vet         | full CRUD | index + show all; edit only their own record | index + show only                                        |
+| Appointment | full CRUD | scoped to appointments where `vet.user = me` | scoped to appointments where `pet.owner.user = me`       |
+| Treatment   | full CRUD | only on appointments assigned to them        | read-only via the parent appointment                     |
+
+Unauthorized access raises `Pundit::NotAuthorizedError`, which
+`ApplicationController` rescues into a flash-alert + redirect back.
 
 ### Seeded credentials
 
-| Email                  | Password      | Role  |
-| ---------------------- | ------------- | ----- |
-| `admin@vetclinic.com`  | `password123` | admin |
-| `vet@vetclinic.com`    | `password123` | vet   |
-| `owner@vetclinic.com`  | `password123` | owner |
+All passwords: `password123`. Users are upserted with `find_or_create_by!`
+so `db:seed` is safe to re-run.
 
-Users are created with `find_or_create_by` so `db:seed` can be re-run
-without errors.
+**Admin**
+
+| Email                  | Linked record |
+| ---------------------- | ------------- |
+| `admin@vetclinic.com`  | none          |
+
+**Vets**
+
+| Email                  | Linked Vet record  |
+| ---------------------- | ------------------ |
+| `vet@vetclinic.com`    | Dr. Jane Smith     |
+| `vet2@vetclinic.com`   | Dr. Carlos Mendoza |
+
+**Owners**
+
+| Email                  | Linked Owner record    |
+| ---------------------- | ---------------------- |
+| `owner@vetclinic.com`  | John Doe (2 pets)      |
+| `owner2@vetclinic.com` | Maria García (2 pets)  |
+
+There's also an unlinked Owner record (Lucía Fernández, 2 pets) that only
+an admin can manage — useful for verifying the `policy_scope` behaviour.
 
 ### Role is server-controlled
 
-The `role` attribute exists on `User` (enum: `owner` / `vet` / `admin`) but
-is **not** included in the Devise sign-up or account-edit permitted
-parameters. Even if a malicious POST tries to set `user[role]=admin`, Rails'
-strong-parameter filtering drops it before assignment. To promote a user,
-edit the record from `rails console` or update the seed file.
+`role` is **not** in any user-facing permitted-parameters list. Even a
+crafted POST that includes `user[role]=admin` would be silently dropped.
+Promotions happen in the seed file or `rails console`.
 
 ## Trix sanitization check
 
@@ -134,3 +172,9 @@ inline event handlers (`onerror=`, `onclick=` …) and `javascript:` URLs.
   sign-up / account-edit views styled to match the rest of the app, a `role`
   enum that the user-facing forms can't touch, and three seeded accounts
   (admin, vet, owner) for quick login testing.
+- **Lab 9** — Pundit authorization: five resource policies, scoped
+  `index` queries, `verify_authorized` / `verify_policy_scoped` enforcement
+  in `ApplicationController`, policy-gated action buttons, role-aware
+  navbar, a real public landing page in `PagesController`, and a richer
+  seed (5 users covering all three roles, with two owner-linked and two
+  vet-linked records).

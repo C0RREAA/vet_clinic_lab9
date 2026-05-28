@@ -1,6 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0">Owners</h1>
-  <%= link_to "New Owner", new_owner_path, class: "btn btn-primary" %>
+  <% if policy(Owner.new).create? %>
+    <%= link_to "New Owner", new_owner_path, class: "btn btn-primary" %>
+  <% end %>
 </div>
 
 <table class="table table-bordered table-hover align-middle">
@@ -21,12 +23,16 @@
         <td><%= owner.phone %></td>
         <td><%= owner.pets.count %></td>
         <td class="text-end">
-          <%= link_to "Edit", edit_owner_path(owner), class: "btn btn-sm btn-outline-secondary" %>
-          <%= button_to "Delete", owner_path(owner),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger d-inline",
-                        form: { class: "d-inline" },
-                        data: { turbo_confirm: "Are you sure?" } %>
+          <% if policy(owner).edit? %>
+            <%= link_to "Edit", edit_owner_path(owner), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(owner).destroy? %>
+            <%= button_to "Delete", owner_path(owner),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger d-inline",
+                          form: { class: "d-inline" },
+                          data: { turbo_confirm: "Are you sure?" } %>
+          <% end %>
         </td>
       </tr>
     <% end %>

@@ -7,9 +7,15 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
         <% if user_signed_in? %>
-          <li class="nav-item">
-            <%= link_to "Owners", owners_path, class: "nav-link" %>
-          </li>
+          <% if current_user.admin? || current_user.vet? %>
+            <li class="nav-item">
+              <%= link_to "Owners", owners_path, class: "nav-link" %>
+            </li>
+          <% elsif current_user.owner? && current_user.owner %>
+            <li class="nav-item">
+              <%= link_to "My account", owner_path(current_user.owner), class: "nav-link" %>
+            </li>
+          <% end %>
           <li class="nav-item">
             <%= link_to "Pets", pets_path, class: "nav-link" %>
           </li>
@@ -27,6 +33,7 @@
           <li class="nav-item">
             <span class="navbar-text text-white-50 me-2">
               <%= "#{current_user.first_name} #{current_user.last_name}" %>
+              <span class="badge bg-secondary ms-1"><%= current_user.role %></span>
             </span>
           </li>
           <li class="nav-item">
@@ -39,9 +46,6 @@
         <% else %>
           <li class="nav-item">
             <%= link_to "Sign in", new_user_session_path, class: "nav-link" %>
-          </li>
-          <li class="nav-item">
-            <%= link_to "Sign up", new_user_registration_path, class: "nav-link" %>
           </li>
         <% end %>
       </ul>

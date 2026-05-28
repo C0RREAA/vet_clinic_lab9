@@ -1,6 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0">Pets</h1>
-  <%= link_to "New Pet", new_pet_path, class: "btn btn-primary" %>
+  <% if policy(Pet.new).create? %>
+    <%= link_to "New Pet", new_pet_path, class: "btn btn-primary" %>
+  <% end %>
 </div>
 
 <table class="table table-bordered table-hover align-middle">
@@ -31,12 +33,16 @@
         <td><%= pet.owner ? link_to("#{pet.owner.first_name} #{pet.owner.last_name}", owner_path(pet.owner)) : "-" %></td>
         <td><%= pet.date_of_birth.strftime("%B %d, %Y") %></td>
         <td class="text-end">
-          <%= link_to "Edit", edit_pet_path(pet), class: "btn btn-sm btn-outline-secondary" %>
-          <%= button_to "Delete", pet_path(pet),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger d-inline",
-                        form: { class: "d-inline" },
-                        data: { turbo_confirm: "Are you sure?" } %>
+          <% if policy(pet).edit? %>
+            <%= link_to "Edit", edit_pet_path(pet), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(pet).destroy? %>
+            <%= button_to "Delete", pet_path(pet),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger d-inline",
+                          form: { class: "d-inline" },
+                          data: { turbo_confirm: "Are you sure?" } %>
+          <% end %>
         </td>
       </tr>
     <% end %>

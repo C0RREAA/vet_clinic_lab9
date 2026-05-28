@@ -2,21 +2,28 @@ class AppointmentsController < ApplicationController
   before_action :set_appointment, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @appointments = Appointment.includes(:pet, :vet).all
+    @appointments = policy_scope(Appointment).includes(:pet, :vet)
   end
 
   def show
+    authorize @appointment
     @appointment = Appointment
       .includes(:pet, :vet, treatments: :rich_text_clinical_notes)
-      .find(params[:id])
+      .find(@appointment.id)
   end
 
   def new
     @appointment = Appointment.new
+    authorize @appointment
   end
 
   def create
-    @appointment = Appointment.new(appointment_params)
+    @appointment = Appointment.new(permitted_attributes(Appointment.new))
+    # Vet-role users can't set vet_id (filtered by policy); force to their own Vet.
+    if current_user.vet? && current_user.vet
+      @appointment.vet = current_user.vet
+    end
+    authorize @appointment
     if @appointment.save
       redirect_to @appointment, notice: "Appointment was successfully created."
     else
@@ -25,10 +32,12 @@ class AppointmentsController < ApplicationController
   end
 
   def edit
+    authorize @appointment
   end
 
   def update
-    if @appointment.update(appointment_params)
+    authorize @appointment
+    if @appointment.update(permitted_attributes(@appointment))
       redirect_to @appointment, notice: "Appointment was successfully updated."
     else
       render :edit, status: :unprocessable_entity
@@ -36,6 +45,7 @@ class AppointmentsController < ApplicationController
   end
 
   def destroy
+    authorize @appointment
     @appointment.destroy
     redirect_to appointments_path, notice: "Appointment was successfully destroyed."
   end
@@ -44,9 +54,5 @@ class AppointmentsController < ApplicationController
 
   def set_appointment
     @appointment = Appointment.find(params[:id])
-  end
-
-  def appointment_params
-    params.require(:appointment).permit(:date, :reason, :status, :pet_id, :vet_id)
   end
 end

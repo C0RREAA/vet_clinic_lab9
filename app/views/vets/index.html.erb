@@ -1,6 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0">Vets</h1>
-  <%= link_to "New Vet", new_vet_path, class: "btn btn-primary" %>
+  <% if policy(Vet.new).create? %>
+    <%= link_to "New Vet", new_vet_path, class: "btn btn-primary" %>
+  <% end %>
 </div>
 
 <table class="table table-bordered table-hover align-middle">
@@ -19,12 +21,16 @@
         <td><%= vet.email %></td>
         <td><%= vet.specialization %></td>
         <td class="text-end">
-          <%= link_to "Edit", edit_vet_path(vet), class: "btn btn-sm btn-outline-secondary" %>
-          <%= button_to "Delete", vet_path(vet),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger d-inline",
-                        form: { class: "d-inline" },
-                        data: { turbo_confirm: "Are you sure?" } %>
+          <% if policy(vet).edit? %>
+            <%= link_to "Edit", edit_vet_path(vet), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(vet).destroy? %>
+            <%= button_to "Delete", vet_path(vet),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger d-inline",
+                          form: { class: "d-inline" },
+                          data: { turbo_confirm: "Are you sure?" } %>
+          <% end %>
         </td>
       </tr>
     <% end %>

@@ -29,14 +29,22 @@
     <%= f.number_field :weight, step: 0.1, class: "form-control" %>
   </div>
 
-  <div class="mb-3">
-    <%= f.label :owner_id, "Owner", class: "form-label" %>
-    <%= f.collection_select :owner_id, Owner.all,
-                            :id,
-                            ->(o) { "#{o.first_name} #{o.last_name}" },
-                            { include_blank: "Select owner" },
-                            class: "form-select" %>
-  </div>
+  <% if current_user&.admin? %>
+    <div class="mb-3">
+      <%= f.label :owner_id, "Owner", class: "form-label" %>
+      <%= f.collection_select :owner_id, Owner.all,
+                              :id,
+                              ->(o) { "#{o.first_name} #{o.last_name}" },
+                              { include_blank: "Select owner" },
+                              class: "form-select" %>
+    </div>
+  <% elsif current_user&.owner? && current_user.owner %>
+    <div class="mb-3">
+      <label class="form-label">Owner</label>
+      <input type="text" class="form-control" value="<%= "#{current_user.owner.first_name} #{current_user.owner.last_name}" %>" disabled>
+      <small class="form-text text-muted">Pets you create are linked to your own owner record.</small>
+    </div>
+  <% end %>
 
   <div class="mb-3">
     <%= f.label :photo, class: "form-label" %>

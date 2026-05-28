@@ -1,3 +1,16 @@
+<%
+  show_pet_field = current_user&.admin? || current_user&.vet? || (current_user&.owner? && appointment.new_record?)
+  # Vets never pick vet_id: it's forced to themselves on create and locked on update.
+  show_vet_field = current_user&.admin? || current_user&.owner?
+  pets_scope = if current_user&.admin? || current_user&.vet?
+                 Pet.includes(:owner).all
+               elsif current_user&.owner? && current_user.owner
+                 current_user.owner.pets
+               else
+                 Pet.none
+               end
+%>
+
 <%= form_with(model: appointment, local: true) do |f| %>
   <%= render "shared/error_messages", object: appointment %>
 
@@ -19,23 +32,37 @@
                  class: "form-select" %>
   </div>
 
-  <div class="mb-3">
-    <%= f.label :pet_id, "Pet", class: "form-label" %>
-    <%= f.collection_select :pet_id, Pet.includes(:owner).all,
-                            :id,
-                            ->(p) { p.owner ? "#{p.name} (#{p.owner.first_name} #{p.owner.last_name})" : p.name },
-                            { include_blank: "Select pet" },
-                            class: "form-select" %>
-  </div>
+  <% if show_pet_field %>
+    <div class="mb-3">
+      <%= f.label :pet_id, "Pet", class: "form-label" %>
+      <%= f.collection_select :pet_id, pets_scope,
+                              :id,
+                              ->(p) { p.owner ? "#{p.name} (#{p.owner.first_name} #{p.owner.last_name})" : p.name },
+                              { include_blank: "Select pet" },
+                              class: "form-select" %>
+    </div>
+  <% elsif appointment.pet %>
+    <div class="mb-3">
+      <label class="form-label">Pet</label>
+      <input type="text" class="form-control" value="<%= appointment.pet.name %>" disabled>
+    </div>
+  <% end %>
 
-  <div class="mb-3">
-    <%= f.label :vet_id, "Vet", class: "form-label" %>
-    <%= f.collection_select :vet_id, Vet.all,
-                            :id,
-                            ->(v) { "#{v.first_name} #{v.last_name}" },
-                            { include_blank: "Select vet" },
-                            class: "form-select" %>
-  </div>
+  <% if show_vet_field %>
+    <div class="mb-3">
+      <%= f.label :vet_id, "Vet", class: "form-label" %>
+      <%= f.collection_select :vet_id, Vet.all,
+                              :id,
+                              ->(v) { "#{v.first_name} #{v.last_name}" },
+                              { include_blank: "Select vet" },
+                              class: "form-select" %>
+    </div>
+  <% elsif appointment.vet %>
+    <div class="mb-3">
+      <label class="form-label">Vet</label>
+      <input type="text" class="form-control" value="<%= "#{appointment.vet.first_name} #{appointment.vet.last_name}" %>" disabled>
+    </div>
+  <% end %>
 
   <div class="d-flex gap-2">
     <%= f.submit class: "btn btn-primary" %>

@@ -1,6 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0">Appointments</h1>
-  <%= link_to "New Appointment", new_appointment_path, class: "btn btn-primary" %>
+  <% if policy(Appointment.new).new? %>
+    <%= link_to "New Appointment", new_appointment_path, class: "btn btn-primary" %>
+  <% end %>
 </div>
 
 <table class="table table-bordered table-hover align-middle">
@@ -27,12 +29,16 @@
           <span class="badge bg-<%= s[1] %>"><%= s[0] %></span>
         </td>
         <td class="text-end">
-          <%= link_to "Edit", edit_appointment_path(appt), class: "btn btn-sm btn-outline-secondary" %>
-          <%= button_to "Delete", appointment_path(appt),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger d-inline",
-                        form: { class: "d-inline" },
-                        data: { turbo_confirm: "Are you sure?" } %>
+          <% if policy(appt).edit? %>
+            <%= link_to "Edit", edit_appointment_path(appt), class: "btn btn-sm btn-outline-secondary" %>
+          <% end %>
+          <% if policy(appt).destroy? %>
+            <%= button_to "Delete", appointment_path(appt),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger d-inline",
+                          form: { class: "d-inline" },
+                          data: { turbo_confirm: "Are you sure?" } %>
+          <% end %>
         </td>
       </tr>
     <% end %>

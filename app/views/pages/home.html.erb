@@ -1,0 +1,25 @@
+<div class="text-center py-5">
+  <h1 class="display-4 mb-3">🐾 VetClinic</h1>
+  <p class="lead text-muted mb-4">
+    A small clinic management app — owners, pets, vets, appointments, and treatments.
+  </p>
+
+  <% if user_signed_in? %>
+    <p class="mb-3">
+      Signed in as <strong><%= current_user.first_name %> <%= current_user.last_name %></strong>
+      (<span class="badge bg-secondary"><%= current_user.role.humanize %></span>)
+    </p>
+    <div class="d-flex justify-content-center gap-2">
+      <% if current_user.admin? || current_user.vet? %>
+        <%= link_to "Owners", owners_path, class: "btn btn-outline-primary" %>
+      <% elsif current_user.owner? && current_user.owner %>
+        <%= link_to "My account", owner_path(current_user.owner), class: "btn btn-outline-primary" %>
+      <% end %>
+      <%= link_to "Pets",         pets_path,         class: "btn btn-outline-primary" %>
+      <%= link_to "Vets",         vets_path,         class: "btn btn-outline-primary" %>
+      <%= link_to "Appointments", appointments_path, class: "btn btn-outline-primary" %>
+    </div>
+  <% else %>
+    <%= link_to "Sign in", new_user_session_path, class: "btn btn-primary btn-lg" %>
+  <% end %>
+</div>

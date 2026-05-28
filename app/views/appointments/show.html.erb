@@ -3,12 +3,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0">Appointment — <%= @appointment.date.strftime("%B %d, %Y") %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "Edit", edit_appointment_path(@appointment), class: "btn btn-outline-secondary" %>
-    <%= button_to "Delete", appointment_path(@appointment),
-                  method: :delete,
-                  class: "btn btn-outline-danger",
-                  form: { class: "d-inline" },
-                  data: { turbo_confirm: "Are you sure?" } %>
+    <% if policy(@appointment).edit? %>
+      <%= link_to "Edit", edit_appointment_path(@appointment), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <% if policy(@appointment).destroy? %>
+      <%= button_to "Delete", appointment_path(@appointment),
+                    method: :delete,
+                    class: "btn btn-outline-danger",
+                    form: { class: "d-inline" },
+                    data: { turbo_confirm: "Are you sure?" } %>
+    <% end %>
   </div>
 </div>
 
@@ -28,7 +32,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="m-0">Treatments</h4>
-  <%= link_to "New Treatment", new_appointment_treatment_path(@appointment), class: "btn btn-primary btn-sm" %>
+  <% if policy(Treatment.new(appointment: @appointment)).create? %>
+    <%= link_to "New Treatment", new_appointment_treatment_path(@appointment), class: "btn btn-primary btn-sm" %>
+  <% end %>
 </div>
 
 <% if @appointment.treatments.any? %>
@@ -38,13 +44,17 @@
         <div class="d-flex justify-content-between align-items-start mb-2">
           <h5 class="card-title m-0"><%= t.name %></h5>
           <div class="d-flex gap-2">
-            <%= link_to "Edit", edit_appointment_treatment_path(@appointment, t),
-                                class: "btn btn-sm btn-outline-secondary" %>
-            <%= button_to "Delete", appointment_treatment_path(@appointment, t),
-                          method: :delete,
-                          class: "btn btn-sm btn-outline-danger",
-                          form: { class: "d-inline" },
-                          data: { turbo_confirm: "Are you sure?" } %>
+            <% if policy(t).edit? %>
+              <%= link_to "Edit", edit_appointment_treatment_path(@appointment, t),
+                                  class: "btn btn-sm btn-outline-secondary" %>
+            <% end %>
+            <% if policy(t).destroy? %>
+              <%= button_to "Delete", appointment_treatment_path(@appointment, t),
+                            method: :delete,
+                            class: "btn btn-sm btn-outline-danger",
+                            form: { class: "d-inline" },
+                            data: { turbo_confirm: "Are you sure?" } %>
+            <% end %>
           </div>
         </div>
         <p class="text-muted small mb-2">

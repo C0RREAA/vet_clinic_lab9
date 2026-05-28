@@ -1,14 +1,22 @@
-<%= link_to "← Back to Owners", owners_path, class: "btn btn-secondary mb-3" %>
+<% if policy(Owner).index? %>
+  <%= link_to "← Back to Owners", owners_path, class: "btn btn-secondary mb-3" %>
+<% else %>
+  <%= link_to "← Home", root_path, class: "btn btn-secondary mb-3" %>
+<% end %>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="m-0"><%= @owner.first_name %> <%= @owner.last_name %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "Edit", edit_owner_path(@owner), class: "btn btn-outline-secondary" %>
-    <%= button_to "Delete", owner_path(@owner),
-                  method: :delete,
-                  class: "btn btn-outline-danger",
-                  form: { class: "d-inline" },
-                  data: { turbo_confirm: "Are you sure?" } %>
+    <% if policy(@owner).edit? %>
+      <%= link_to "Edit", edit_owner_path(@owner), class: "btn btn-outline-secondary" %>
+    <% end %>
+    <% if policy(@owner).destroy? %>
+      <%= button_to "Delete", owner_path(@owner),
+                    method: :delete,
+                    class: "btn btn-outline-danger",
+                    form: { class: "d-inline" },
+                    data: { turbo_confirm: "Are you sure?" } %>
+    <% end %>
   </div>
 </div>
 

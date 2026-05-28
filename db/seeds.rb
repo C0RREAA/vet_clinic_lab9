@@ -8,71 +8,6 @@ Vet.destroy_all
 
 PHOTO_DIR = Rails.root.join("db", "seeds", "pets")
 
-# ── Users (auth) ────────────────────────────────────────
-[
-  { email: "admin@vetclinic.com", first_name: "Admin", last_name: "User",  role: :admin },
-  { email: "vet@vetclinic.com",   first_name: "Jane",  last_name: "Smith", role: :vet },
-  { email: "owner@vetclinic.com", first_name: "John",  last_name: "Doe",   role: :owner }
-].each do |attrs|
-  user = User.find_or_create_by!(email: attrs[:email]) do |u|
-    u.first_name = attrs[:first_name]
-    u.last_name  = attrs[:last_name]
-    u.role       = attrs[:role]
-    u.password   = "password123"
-    u.password_confirmation = "password123"
-  end
-
-  # Keep name/role up to date if the user already existed but with stale data.
-  user.update!(
-    first_name: attrs[:first_name],
-    last_name:  attrs[:last_name],
-    role:       attrs[:role]
-  )
-end
-
-# ── Owners ──────────────────────────────────────────────
-ana = Owner.create!(
-  first_name: "Ana",
-  last_name:  "Martínez",
-  email:      "ana.martinez@email.com",
-  phone:      "+56912345678",
-  address:    "Av. Providencia 1234, Santiago"
-)
-
-carlos = Owner.create!(
-  first_name: "Carlos",
-  last_name:  "Rojas",
-  email:      "carlos.rojas@email.com",
-  phone:      "+56987654321",
-  address:    "Los Leones 567, Vitacura"
-)
-
-lucia = Owner.create!(
-  first_name: "Lucía",
-  last_name:  "Fernández",
-  email:      "lucia.fernandez@email.com",
-  phone:      "+56955544433",
-  address:    "Calle Nueva 89, Ñuñoa"
-)
-
-# ── Vets ────────────────────────────────────────────────
-dr_silva = Vet.create!(
-  first_name:     "Diego",
-  last_name:      "Silva",
-  email:          "d.silva@vetclinic.cl",
-  phone:          "+56922233344",
-  specialization: "Medicina General"
-)
-
-dra_lopez = Vet.create!(
-  first_name:     "Valentina",
-  last_name:      "López",
-  email:          "v.lopez@vetclinic.cl",
-  phone:          "+56933344455",
-  specialization: "Cirugía"
-)
-
-# ── Pets (with photos) ───────────────────────────────────
 def attach_photo(pet, filename)
   path = PHOTO_DIR.join(filename)
   return unless File.exist?(path)
@@ -84,98 +19,148 @@ def attach_photo(pet, filename)
   )
 end
 
-firulais = ana.pets.create!(
-  name:          "Firulais",
-  species:       "dog",
-  breed:         "Labrador",
-  date_of_birth: "2019-03-15",
-  weight:        28.5
+# ── Users (auth) ────────────────────────────────────────
+USERS = [
+  { email: "admin@vetclinic.com",  first_name: "Admin",  last_name: "User",     role: :admin },
+  { email: "vet@vetclinic.com",    first_name: "Jane",   last_name: "Smith",    role: :vet },
+  { email: "vet2@vetclinic.com",   first_name: "Carlos", last_name: "Mendoza",  role: :vet },
+  { email: "owner@vetclinic.com",  first_name: "John",   last_name: "Doe",      role: :owner },
+  { email: "owner2@vetclinic.com", first_name: "Maria",  last_name: "García",   role: :owner }
+].map do |attrs|
+  user = User.find_or_create_by!(email: attrs[:email]) do |u|
+    u.first_name = attrs[:first_name]
+    u.last_name  = attrs[:last_name]
+    u.role       = attrs[:role]
+    u.password   = "password123"
+    u.password_confirmation = "password123"
+  end
+  user.update!(first_name: attrs[:first_name], last_name: attrs[:last_name], role: attrs[:role])
+  user
+end
+
+admin_user, vet_user, vet2_user, owner_user, owner2_user = USERS
+
+# Clear any leftover linkage from previous seed runs (re-seed safety).
+Owner.update_all(user_id: nil)
+Vet.update_all(user_id: nil)
+
+# ── Vets (linked to vet-role users) ─────────────────────
+dr_smith = Vet.create!(
+  user:           vet_user,
+  first_name:     "Jane",
+  last_name:      "Smith",
+  email:          "j.smith@vetclinic.cl",
+  phone:          "+56922233344",
+  specialization: "Medicina General"
+)
+
+dr_mendoza = Vet.create!(
+  user:           vet2_user,
+  first_name:     "Carlos",
+  last_name:      "Mendoza",
+  email:          "c.mendoza@vetclinic.cl",
+  phone:          "+56933344455",
+  specialization: "Cirugía"
+)
+
+# ── Owners (linked to owner-role users) ─────────────────
+john = Owner.create!(
+  user:       owner_user,
+  first_name: "John",
+  last_name:  "Doe",
+  email:      "john.doe@email.com",
+  phone:      "+56912345678",
+  address:    "Av. Providencia 1234, Santiago"
+)
+
+maria = Owner.create!(
+  user:       owner2_user,
+  first_name: "Maria",
+  last_name:  "García",
+  email:      "maria.garcia@email.com",
+  phone:      "+56987654321",
+  address:    "Los Leones 567, Vitacura"
+)
+
+# An owner record with no associated user (legacy/walk-in customer).
+lucia = Owner.create!(
+  user:       nil,
+  first_name: "Lucía",
+  last_name:  "Fernández",
+  email:      "lucia.fernandez@email.com",
+  phone:      "+56955544433",
+  address:    "Calle Nueva 89, Ñuñoa"
+)
+
+# ── Pets ────────────────────────────────────────────────
+firulais = john.pets.create!(
+  name: "Firulais", species: "dog", breed: "Labrador",
+  date_of_birth: "2019-03-15", weight: 28.5
 )
 attach_photo(firulais, "dog1.jpg")
 
-michi = ana.pets.create!(
-  name:          "Michi",
-  species:       "cat",
-  breed:         "Siamés",
-  date_of_birth: "2021-07-20",
-  weight:        4.2
+michi = john.pets.create!(
+  name: "Michi", species: "cat", breed: "Siamés",
+  date_of_birth: "2021-07-20", weight: 4.2
 )
 attach_photo(michi, "cat1.jpg")
 
-rex = carlos.pets.create!(
-  name:          "Rex",
-  species:       "dog",
-  breed:         "Pastor Alemán",
-  date_of_birth: "2018-11-05",
-  weight:        35.0
-)
-attach_photo(rex, "dog2.jpg")
-
-bunny = carlos.pets.create!(
-  name:          "Bunny",
-  species:       "rabbit",
-  breed:         "Holland Lop",
-  date_of_birth: "2022-01-10",
-  weight:        2.1
-)
-# Bunny has no photo on purpose, to exercise the placeholder branch.
-
-luna = lucia.pets.create!(
-  name:          "Luna",
-  species:       "cat",
-  breed:         "Persa",
-  date_of_birth: "2020-05-30",
-  weight:        3.8
+luna = maria.pets.create!(
+  name: "Luna", species: "cat", breed: "Persa",
+  date_of_birth: "2020-05-30", weight: 3.8
 )
 attach_photo(luna, "cat2.jpg")
 
-# An extra pet that gets the third dog photo.
-toby = lucia.pets.create!(
-  name:          "Toby",
-  species:       "dog",
-  breed:         "Beagle",
-  date_of_birth: "2023-02-14",
-  weight:        12.0
+toby = maria.pets.create!(
+  name: "Toby", species: "dog", breed: "Beagle",
+  date_of_birth: "2023-02-14", weight: 12.0
 )
-attach_photo(toby, "dog3.jpg")
+attach_photo(toby, "dog2.jpg")
 
-# ── Appointments ─────────────────────────────────────────
+# Lucía's pets (no associated user, only an admin can manage them).
+rex = lucia.pets.create!(
+  name: "Rex", species: "dog", breed: "Pastor Alemán",
+  date_of_birth: "2018-11-05", weight: 35.0
+)
+attach_photo(rex, "dog3.jpg")
+
+bunny = lucia.pets.create!(
+  name: "Bunny", species: "rabbit", breed: "Holland Lop",
+  date_of_birth: "2022-01-10", weight: 2.1
+)
+
+# ── Appointments ────────────────────────────────────────
 a1 = Appointment.create!(
-  pet: firulais, vet: dr_silva,
-  date:   "2024-11-10 10:00:00",
-  reason: "Control anual y vacunas",
+  pet: firulais, vet: dr_smith,
+  date: "2024-11-10 10:00:00", reason: "Control anual y vacunas",
   status: :completed
 )
 
 a2 = Appointment.create!(
-  pet: michi, vet: dra_lopez,
-  date:   "2024-12-05 11:30:00",
-  reason: "Castración",
+  pet: michi, vet: dr_mendoza,
+  date: "2024-12-05 11:30:00", reason: "Castración",
   status: :completed
 )
 
 a3 = Appointment.create!(
-  pet: rex, vet: dr_silva,
-  date:   "2025-01-15 09:00:00",
-  reason: "Revisión de cadera",
+  pet: luna, vet: dr_smith,
+  date: "2025-01-15 09:00:00", reason: "Revisión dermatológica",
   status: :in_progress
 )
 
 a4 = Appointment.create!(
-  pet: bunny, vet: dra_lopez,
-  date:   "2026-06-20 14:00:00",
-  reason: "Revisión general",
+  pet: toby, vet: dr_mendoza,
+  date: "2026-06-20 14:00:00", reason: "Revisión general",
   status: :scheduled
 )
 
 a5 = Appointment.create!(
-  pet: luna, vet: dr_silva,
-  date:   "2024-10-01 16:00:00",
-  reason: "Dermatitis",
+  pet: rex, vet: dr_smith,
+  date: "2024-10-01 16:00:00", reason: "Lesión en cadera",
   status: :cancelled
 )
 
-# ── Treatments (with rich-text clinical notes) ───────────
+# ── Treatments (rich-text clinical notes) ───────────────
 a1.treatments.create!(
   name:            "Vacuna antirrábica",
   medication:      "Rabisin",
@@ -233,12 +218,11 @@ a3.treatments.create!(
   administered_at: "2025-01-15 09:30:00",
   clinical_notes:  <<~HTML
     <h2>Findings</h2>
-    <p>Moderate stiffness in <strong>right hip</strong>; lameness noted on physical exam.</p>
+    <p>Mild <strong>dermatitis</strong> on the back; intermittent scratching.</p>
     <h3>Next steps</h3>
     <ul>
+      <li>Topical anti-itch shampoo, twice weekly</li>
       <li>Re-evaluate in <strong>2 weeks</strong></li>
-      <li>Consider joint supplements (glucosamine + chondroitin)</li>
-      <li>Encourage low-impact exercise</li>
     </ul>
   HTML
 )
@@ -250,15 +234,19 @@ a3.treatments.create!(
   administered_at: "2025-01-15 09:15:00",
   clinical_notes:  <<~HTML
     <h2>Imaging report</h2>
-    <p>Mild <strong>hip dysplasia</strong> visible on lateral and ventro-dorsal projections.</p>
+    <p>No bone abnormalities on the lateral or ventro-dorsal projections.</p>
     <ul>
-      <li>Femoral head subluxation: minimal</li>
-      <li>Joint space: slightly reduced bilaterally</li>
-      <li>Recommendation: weight management, low-calorie diet</li>
+      <li>Spine: normal alignment</li>
+      <li>Hip joints: normal</li>
+      <li>Recommendation: focus on skin-level treatment</li>
     </ul>
   HTML
 )
 
-puts "✅ Seed completado: #{Owner.count} owners, #{Pet.count} pets, #{Vet.count} vets, #{Appointment.count} appointments, #{Treatment.count} treatments"
-puts "🖼  Photos attached: #{Pet.joins(:photo_attachment).count}/#{Pet.count}"
-puts "👤 Users: #{User.count} (#{User.pluck(:role).tally})"
+puts "✅ Seed completado:"
+puts "  Users:        #{User.count} (#{User.group(:role).count})"
+puts "  Owners:       #{Owner.count} (linked to users: #{Owner.where.not(user_id: nil).count})"
+puts "  Vets:         #{Vet.count} (linked to users: #{Vet.where.not(user_id: nil).count})"
+puts "  Pets:         #{Pet.count} (with photos: #{Pet.joins(:photo_attachment).count})"
+puts "  Appointments: #{Appointment.count}"
+puts "  Treatments:   #{Treatment.count}"

@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   devise_for :users
-  root "owners#index"
+  root "pages#home"
 
   resources :owners
   resources :pets
